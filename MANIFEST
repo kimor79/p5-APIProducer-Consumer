@@ -1,0 +1,7 @@
+README
+LICENSE
+lib/APIProducer/Client.pm
+MANIFEST
+Build.PL
+Makefile.PL
+META.yml
