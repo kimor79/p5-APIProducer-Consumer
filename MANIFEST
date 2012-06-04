@@ -1,6 +1,6 @@
 README
 LICENSE
-lib/APIProducer/Client.pm
+lib/APIProducer/Consumer.pm
 MANIFEST
 Build.PL
 Makefile.PL
