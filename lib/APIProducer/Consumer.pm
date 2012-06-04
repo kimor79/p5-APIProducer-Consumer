@@ -225,7 +225,6 @@ Required options:
 
 Optional options:
 
- * body - urlencode or json (default)
  * get - hash of parameters to add to the query string
 
 =cut
