@@ -1,6 +1,6 @@
 use strict;
 
-use Test::More tests => 5;
+use Test::More tests => 7;
 
 our $PACKAGE;
 
@@ -19,10 +19,12 @@ my $got;
 
 my $obj = $PACKAGE->new();
 
-$got = $obj->get('no-exist');
+$got = $obj->make_request('no-exist');
 is($got, undef, 'no-exist');
-like($obj->errstr(), '/404/', 'no-exist' );
+is($obj->get_status(), '404', 'no-exist' );
+like($obj->get_message(), '/Found/', 'no-exist' );
 
-$got = $obj->get('no-exist', { 'foo' => 'bar' });
+$got = $obj->make_request('no-exist', { 'get' => { 'foo' => 'bar' } });
 is($got, undef, 'no-exist with get');
-like($obj->errstr(), '/404/', 'no-exist with get' );
+is($obj->get_status(), '404', 'no-exist with get' );
+like($obj->get_message(), '/Found/', 'no-exist with get' );

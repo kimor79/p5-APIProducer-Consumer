@@ -16,8 +16,9 @@ my $builder = Module::Build->new(
 		'Test::Strict'	=> 0,
 	},
 	requires => {
-		'Hash::Merge' => 0,
 		'JSON::DWIW' => 0,
+		'LWP::UserAgent' => 0,
+		'URI::Escape' => 0,
 	},
 	create_makefile_pl	=> 'traditional',
 );
