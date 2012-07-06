@@ -246,7 +246,7 @@ Options:
 		}
 	}
 
-	push(@query, 'outputFormat=json', 'restfulOutput=0');
+	push(@query, 'outputFormat=json', 'statusHeader=0');
 	$uri .= '?' . join('&', @query);
 
 	if(defined($opts->{'json_post'})) {
