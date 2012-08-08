@@ -9,7 +9,7 @@ APIProducer::Consumer - Interaction with api_producer sites
   use APIProducer::Consumer;
   my $consumer = APIProducer::Consumer->new('base_uri' => 'http://foo/');
   $data = $consumer->make_request('/v1/w/foo',
-    'json_post' => { 'foo' => 'bar' });
+    'json' => { 'foo' => 'bar' });
 
 =head1 DESCRIPTION
 
@@ -218,7 +218,7 @@ Make a request to an API at $path. Returns a ref to the data.
 Options:
 
  * get - hash of parameters to add to the query string
- * json_post - hash of data to be JSONized
+ * json - hash of data to be JSONized
 
 =cut
 
@@ -249,8 +249,8 @@ Options:
 	push(@query, 'outputFormat=json', 'statusHeader=0');
 	$uri .= '?' . join('&', @query);
 
-	if(defined($opts->{'json_post'})) {
-		($input, $err) = $JSON->to_json($opts->{'json_post'});
+	if(defined($opts->{'json'})) {
+		($input, $err) = $JSON->to_json($opts->{'json'});
 		if(defined($err)) {
 			return _set(400, $err);
 		}
