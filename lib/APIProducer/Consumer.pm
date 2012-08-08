@@ -252,7 +252,7 @@ Options:
 	if(defined($opts->{'json_post'})) {
 		($input, $err) = $JSON->to_json($opts->{'json_post'});
 		if(defined($err)) {
-			return _errstr($err);
+			return _set(400, $err);
 		}
 
 		$request = HTTP::Request->new('POST' => $uri);
