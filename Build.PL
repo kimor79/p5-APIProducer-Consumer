@@ -18,7 +18,9 @@ my $builder = Module::Build->new(
 	requires => {
 		'JSON::DWIW' => 0,
 		'LWP::UserAgent' => 0,
+		'Moose' => 0,
 		'URI::Escape' => 0,
+		'namespace::autoclean' => 0,
 	},
 	create_makefile_pl	=> 'traditional',
 );

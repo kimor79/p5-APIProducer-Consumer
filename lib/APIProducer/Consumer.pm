@@ -20,14 +20,13 @@ The error message can be retrieved via the object's get_message() method.
 
 =cut
 
-use strict;
-use warnings;
+use Moose;
+use namespace::autoclean;
 
 ##
 ## Modules
 ##
 
-use Carp;
 use JSON::DWIW;
 use LWP::UserAgent;
 use URI::Escape;
@@ -36,7 +35,7 @@ use URI::Escape;
 ## Variables
 ##
 
-my $VERSION = '0.01';
+my $VERSION = '0.02';
 
 =head1 OPTIONS
 
@@ -45,10 +44,6 @@ my $VERSION = '0.01';
 =item base_uri
 
 The base_uri. Default is http://localhost/api/.
-
-=item lwp_opts
-
-Options to be passed on to LWP::UserAgent. E.g., ssl_opts and/or agent.
 
 =back
 
@@ -61,12 +56,15 @@ my %OUTPUT = (
 	'response' => undef,
 	'status' => 500,
 );
-my $PARAMS = {
-	'base_uri' => 'http://localhost/api/',
-	'lwp_opts' => {
-		'agent' => __PACKAGE__ . '/' . $VERSION,
-	},
-};
+
+has 'base_uri' => ('is' => 'rw', 'isa' => 'Str',
+	'default' => 'http://localhost/api/');
+has 'http_request' => ('is' => 'ro', 'isa' => 'Str', required => 1,
+	'default' => 'HTTP::Request');
+has 'json' => ('is' => 'ro', 'isa' => 'Object', required => 1,
+	'default' => sub { JSON::DWIW->new() });
+has 'ua' => ('is' => 'ro', 'isa' => 'Object', required => 1,
+	'default' => sub { LWP::UserAgent->new() });
 
 ##
 ## Subroutines
@@ -92,37 +90,6 @@ Return the message from the most recent API call.
 
 	my $self = shift;
 	return $self->_get('message');
-}
-
-sub get_param {
-
-=item get_param($param)
-
-=item get_param($param, $sub)
-
-Return the value of the given parameter. An optional sub item can be given
-to return the value of a sub-section parameter.
-
-=cut
-
-	my ($self, $param, $sub) = @_;
-	my $message = 'Unknown parameter: ' . $param;
-
-	$self->_reset();
-
-	if(exists($PARAMS->{$param})) {
-		if(defined($sub)) {
-			if(exists($PARAMS->{$param}->{$sub})) {
-				return $PARAMS->{$param}->{$sub};
-			}
-
-			$message .= ' - ' . $sub;
-		} else {
-			return $PARAMS->{$param};
-		}
-	}
-
-	return $self->_set(400, $message);
 }
 
 sub get_request {
@@ -235,7 +202,7 @@ Options:
 
 	$path =~ s|^/||;
 
-	$uri = $self->get_param('base_uri');
+	$uri = $self->base_uri();
 	$uri =~ s|/$||;
 	$uri .= '/' . $path;
 
@@ -250,21 +217,21 @@ Options:
 	$uri .= '?' . join('&', @query);
 
 	if(defined($opts->{'json'})) {
-		($input, $err) = $JSON->to_json($opts->{'json'});
+		($input, $err) = $self->json()->to_json($opts->{'json'});
 		if(defined($err)) {
 			return _set(400, $err);
 		}
 
-		$request = HTTP::Request->new('POST' => $uri);
+		$request = $self->http_request()->new('POST' => $uri);
 		$request->header('Content-Type' => 'application/json');
 		$request->content($input);
 	} else {
 		# TODO: support normal POST (urlencode)
 
-		$request = HTTP::Request->new('GET' => $uri);
+		$request = $self->http_request()->new('GET' => $uri);
 	}
 
-	$response = $self->{'ua'}->request($request);
+	$response = $self->ua()->request($request);
 
 	$OUTPUT{'request'} = $request;
 	$OUTPUT{'response'} = $response;
@@ -273,7 +240,8 @@ Options:
 		return $self->_set($response->code(), $response->status_line());
 	}
 
-	($output, $err) = $JSON->from_json($response->decoded_content());
+	($output, $err) =
+		$self->json()->from_json($response->decoded_content());
 	if(defined($err)) {
 		return $self->_set(500, $err);
 	}
@@ -288,85 +256,6 @@ Options:
 	}
 
 	return $self->_set(500, $response->decoded_content());
-}
-
-sub new {
-
-=item new(%options)
-
-Create a new object. See OPTIONS for available options.
-
-The LWP::UserAgent object can be access directly via this module's object,
-e.g.: $consumer->{'ua'}
-
-Croak's on failure.
-
-=cut
-
-	my $proto = shift;
-	my $options = {@_};
-	my $class = ref($proto) || $proto;
-	my $self = {};
-
-	if(defined($options) && ref($options) eq 'HASH') {
-		foreach my $param (keys(%{$PARAMS})) {
-			if(exists($options->{$param})) {
-				$PARAMS->{$param} = $options->{$param};
-			}
-		}
-	}
-
-	$JSON = JSON::DWIW->new();
-
-	local $SIG{__WARN__} = sub { die $_[0]; };
-	eval {
-		$self->{'ua'} = LWP::UserAgent->new(%{$PARAMS->{'lwp_opts'}});
-	};
-	if($@) {
-		croak($@);
-	}
-
-	return bless($self, $class);
-}
-
-
-sub set_param {
-
-=item set_param($param, $value)
-
-=item set_param($param, $sub, $value)
-
-Modify a parameter. Returns the newly set value.
-
-=cut
-
-	my ($self, $param, $sub, $value);
-
-	if(scalar(@_) eq 3) {
-		($self, $param, $value) = @_;
-	} else {
-		($self, $param, $sub, $value) = @_;
-	}
-
-	my $message = 'Unknown param: ' . $param;
-
-	$self->_reset();
-
-	if(exists($PARAMS->{$param})) {
-		if(defined($sub)) {
-			if(exists($PARAMS->{$param}->{$sub})) {
-				$PARAMS->{$param}->{$sub} = $value;
-				return $self->get_param($param, $sub);
-			}
-
-			$message .= ' - ' . $sub;
-		} else {
-			$PARAMS->{$param} = $value;
-			return $self->get_param($param);
-		}
-	}
-
-	return $self->_set(400, $message);
 }
 
 #
@@ -427,5 +316,9 @@ Wrapper to set the status and message and then return undef.
 ##
 
 =back
+
 =cut
+
+__PACKAGE__->meta()->make_immutable();
+
 1;
