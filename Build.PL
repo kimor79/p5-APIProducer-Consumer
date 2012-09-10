@@ -4,7 +4,7 @@ use Module::Build;
 
 my $builder = Module::Build->new(
 	module_name		=> 'APIProducer::Consumer',
-	license			=> 'perl',
+	license			=> 'bsd',
 	dist_author		=> 'Kimo Rosenbaum <kimor79@yahoo.com>',
 	dist_version_from	=> 'lib/APIProducer/Consumer.pm',
 	build_requires => {
